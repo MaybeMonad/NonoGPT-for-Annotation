@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "NonoGPT for Annotation",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "src/content/index.tsx"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+.nono-gpt-extension {
+  height: 24px;
+  width: 24px;
+  /* background: black; */
+}
+
+.nono-gpt-extension__trigger-button {
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  color: white;
+  border: none;
+  background-color: black;
+  border-radius: 3px;
+  padding: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #222;
+}
+
+.nono-gpt-extension__trigger-button > svg {
+  width: 16px;
+}
+
+.nono-gpt-extension__trigger-button:hover {
+}
+
+.nono-gpt-extension__trigger-button:focus {
+  outline: none;
+}
