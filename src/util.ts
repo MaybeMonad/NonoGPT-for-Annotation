@@ -1,4 +1,3 @@
-import { createParser } from "eventsource-parser";
 import anime from "animejs";
 
 type ElementProps = {
@@ -42,6 +41,10 @@ export function Div(props: ElementProps) {
 
 export function Button(props: ElementProps) {
   return createElement("button")(props);
+}
+
+export function Span(props: ElementProps) {
+  return createElement("span")(props);
 }
 
 export function appendTo(target: HTMLElement) {
@@ -106,62 +109,10 @@ export function getLatestElement<P extends object>(
   return store.get(keys[keys.length - 1]);
 }
 
-/**
- * The SSE parser code is borrowed from @yetone
- */
-
-export async function* streamAsyncIterable(
-  stream: ReadableStream<Uint8Array> | null
-) {
-  if (!stream) {
-    return;
-  }
-
-  const reader = stream.getReader();
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        return;
-      }
-
-      yield value;
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
-
-interface FetchSSEOptions extends RequestInit {
-  onMessage(data: string): void;
-  onError(error: any): void;
-}
-
-export async function fetchSSE(input: string, options: FetchSSEOptions) {
-  const { onMessage, onError, ...fetchOptions } = options;
-  let response;
-  try {
-    response = await fetch(input, fetchOptions);
-  } catch (err) {
-    onError(err);
-    return;
-  }
-
-  if (response.status !== 200) {
-    onError(await response.json());
-    return;
-  }
-
-  const parser = createParser((event) => {
-    if (event.type === "event") {
-      onMessage(event.data);
-    }
-  });
-
-  for await (const chunk of streamAsyncIterable(response.body)) {
-    const str = new TextDecoder().decode(chunk);
-    parser.feed(str);
-  }
+export function getElement<P extends object>(
+  store: Map<string, P>,
+  element: HTMLElement
+): P | undefined {
+  const id = element.getAttribute("data-annotation-id");
+  return id ? store.get(id) : undefined;
 }

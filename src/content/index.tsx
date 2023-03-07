@@ -1,4 +1,12 @@
-import { Observable, Subject, fromEvent, interval, merge, noop } from "rxjs";
+import {
+  Observable,
+  Subject,
+  Subscription,
+  fromEvent,
+  interval,
+  merge,
+  noop,
+} from "rxjs";
 import {
   takeUntil,
   map,
@@ -15,9 +23,10 @@ import { annotate } from "rough-notation";
 import {
   Button,
   Div,
+  Span,
   appendChild,
   appendTo,
-  createElement,
+  getElement,
   // getLatestElement,
   hideElement,
   showElement,
@@ -25,6 +34,7 @@ import {
 import api from "~/content/api";
 
 import "./index.css";
+import { RoughAnnotation } from "rough-notation/lib/model";
 
 console.log("Content Script is Working!");
 
@@ -34,10 +44,18 @@ console.log("Content Script is Working!");
 
 const annotationsStore = new Map<
   string,
-  { element: HTMLElement; observable: Observable<Event> }
+  {
+    element: HTMLElement;
+    observable: Observable<Event>;
+    originalText: string;
+    originalElement: DocumentFragment;
+    annotationInstance: RoughAnnotation;
+    subscription: Subscription;
+  }
 >();
 
 let selectedTextStore = "";
+let currentAnnotationId = "";
 
 enum MessageType {
   Translate = "translate",
@@ -71,9 +89,20 @@ const annotationPanel = Div({
   callback: appendTo(document.body),
 });
 
+const originTextContainer = Div({
+  className: "origin_text_container",
+  callback: appendTo(annotationPanel),
+});
+
 const originTextElement = Div({
   className: "origin_text",
-  callback: appendTo(annotationPanel),
+  callback: appendTo(originTextContainer),
+});
+
+const originTextDeleteButton = Div({
+  className: "origin_text_delete_button",
+  innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+  callback: appendTo(originTextContainer),
 });
 
 const actionButtonsElement = Div({
@@ -161,25 +190,39 @@ const translateButton$ = fromEvent(translateButton, "click")
       resultElement.innerHTML = "";
     }),
     switchMap(() =>
-      api.translate({
-        text: selectedTextStore,
-        onMessage: ({ content }) => {
-          resultElement.style.display = "block";
-          resultElement.innerHTML += content;
-        },
-        onError: console.log,
-        onFinish: console.log,
-      })
+      api.translate((result) => {
+        resultElement.style.display = "block";
+        resultElement.innerHTML += result;
+      })(selectedTextStore)
     )
   )
   .subscribe(console.log);
+
+const originTextDeleteButton$ = fromEvent(originTextDeleteButton, "click").pipe(
+  map(() => MessageType.HideAllPopup)
+);
+
+originTextDeleteButton$.subscribe(() => {
+  if (annotationsStore.has(currentAnnotationId)) {
+    // console.log(annotationsStore.get(currentAnnotationId));
+    const store = annotationsStore.get(currentAnnotationId);
+    if (store) {
+      store.annotationInstance.remove();
+      store.subscription.unsubscribe();
+      // store.element.replaceWith(store.originalElement);
+    }
+  }
+});
 
 /**
  * Functions
  */
 
 function showAnnotationPanel(text: string) {
-  return function (rect: DOMRect) {
+  return function (target: HTMLElement) {
+    currentAnnotationId = target.getAttribute("data-annotation-id") || "";
+
+    const rect = target.getBoundingClientRect();
     originTextElement.innerHTML = `${text}`;
 
     showElement(
@@ -211,7 +254,13 @@ mouseup$
       y: (event as MouseEvent).pageY - 27,
       selectedContent: window.getSelection()?.toString(),
     })),
-    mergeWith(visibleInterval$, mousedown$, triggerMousedown$, triggerMouseup$)
+    mergeWith(
+      visibleInterval$,
+      mousedown$,
+      triggerMousedown$,
+      triggerMouseup$,
+      originTextDeleteButton$
+    )
   )
   .subscribe((event) => {
     console.log({ event });
@@ -246,10 +295,11 @@ mouseup$
         const clonedContent = range.cloneContents();
         range.deleteContents();
 
-        const id = new Date().getTime().toString();
-        const annotationSpan = createElement("span")({
+        // const id = new Date().getTime().toString();
+        const id = selectedTextStore;
+        const annotationSpan = Span({
           id,
-          className: `nono-gpt-extension__id-${id}`,
+          className: `annotation-highlighted-text`,
           style: {
             whiteSpace: "pre-wrap",
           },
@@ -258,26 +308,29 @@ mouseup$
 
         range.insertNode(annotationSpan);
 
-        annotate(annotationSpan, {
+        const annotation = annotate(annotationSpan, {
           type: "highlight",
           multiline: true,
           color: "rgb(255, 213, 79)",
           brackets: ["left", "right"],
-        }).show();
+        });
 
-        const rect = annotationSpan.getBoundingClientRect();
-        showAnnotationPanel(text)(rect);
+        annotation.show();
+
+        showAnnotationPanel(text)(annotationSpan);
 
         const annotation$ = fromEvent(annotationSpan, "click");
-        annotation$
-          .pipe(
-            map((evt) => (evt.target as HTMLDivElement).getBoundingClientRect())
-          )
+        const subscription = annotation$
+          .pipe(map((evt) => evt.target as HTMLDivElement))
           .subscribe(showAnnotationPanel(text));
 
         annotationsStore.set(id, {
           element: annotationSpan,
+          originalText: text,
+          originalElement: clonedContent,
           observable: annotation$,
+          subscription,
+          annotationInstance: annotation,
         });
       })
       .with({ selectedContent: P.string }, (data) => {

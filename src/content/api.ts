@@ -1,101 +1,131 @@
-/**
- * Inspired by @yetone
- */
+import {
+  EventStreamContentType,
+  fetchEventSource,
+} from "@microsoft/fetch-event-source";
 
-import { fetchSSE } from "~/util";
-
-export interface TranslateQuery {
-  text: string;
-  onMessage: (message: { content: string; role: string }) => void;
-  onError: (error: string) => void;
-  onFinish: (reason: string) => void;
+interface Query {
+  userPrompt: string;
+  systemPrompt: string;
+  onMessage: (message: string) => void;
+  // onError: (error: string) => void;
+  // onFinish: (reason: string) => void;
 }
 
-export interface TranslateResult {
-  text?: string;
-  from?: string;
-  to?: string;
-  error?: string;
-}
+export async function queryFn(query: Query) {
+  class RetriableError extends Error {}
+  class FatalError extends Error {}
 
-export async function translate(query: TranslateQuery) {
-  const apiKey = import.meta.env.VITE_OPENAI_KEY;
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
+  class StopStream extends Error {}
 
-  let prompt = `translate from English to Chinese`;
+  function headers() {
+    const apiKey = import.meta.env.VITE_OPENAI_KEY;
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    };
+  }
 
-  prompt = `${prompt}:\n\n"${query.text}" =>`;
+  function body() {
+    return {
+      model: "gpt-3.5-turbo",
+      temperature: 0,
+      max_tokens: 1000,
+      top_p: 1,
+      frequency_penalty: 1,
+      presence_penalty: 1,
+      messages: [
+        { role: "system", content: query.systemPrompt },
+        { role: "user", content: query.userPrompt },
+      ],
+      stream: true,
+    };
+  }
 
-  const body = {
-    model: "gpt-3.5-turbo",
-    temperature: 0,
-    max_tokens: 1000,
-    top_p: 1,
-    frequency_penalty: 1,
-    presence_penalty: 1,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a translation engine that can only translate text and cannot interpret it.",
+  try {
+    await fetchEventSource("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(body()),
+      async onopen(response) {
+        if (
+          response.ok &&
+          response.headers.get("content-type") === EventStreamContentType
+        ) {
+          return;
+        } else if (
+          response.status >= 400 &&
+          response.status < 500 &&
+          response.status !== 429
+        ) {
+          throw new FatalError();
+        } else {
+          throw new RetriableError();
+        }
       },
-      { role: "user", content: prompt },
-    ],
-    stream: true,
+      onmessage(msg) {
+        if (msg.event === "FatalError") {
+          throw new FatalError(msg.data);
+        }
+
+        if (msg.data === "[DONE]") {
+          throw new StopStream("DONE");
+        }
+
+        try {
+          const parsedData = JSON.parse(msg.data);
+          if (parsedData.choices[0].delta.content) {
+            query.onMessage(parsedData.choices[0].delta.content as string);
+          }
+        } catch (err) {
+          console.error("JSON parse failed", err);
+          throw new FatalError("JSON parse failed");
+        }
+      },
+      onclose() {
+        // if the server closes the connection unexpectedly, retry:
+        throw new RetriableError();
+      },
+      onerror(err) {
+        if (err instanceof FatalError || err instanceof StopStream) {
+          throw err;
+        } else {
+          // do nothing to automatically retry. You can also
+          // return a specific retry interval here.
+        }
+      },
+    });
+  } catch (err) {
+    // console.log(err);
+  }
+}
+
+export function translate(onReceive: (text: string) => void) {
+  return async function (text: string) {
+    queryFn({
+      userPrompt: `translate from English to Chinese: ${text}`,
+      systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
+      onMessage(newMsg) {
+        onReceive(newMsg);
+      },
+    });
   };
+}
 
-  let isFirst = true;
-
-  await fetchSSE("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-    onMessage: (msg) => {
-      let response;
-      try {
-        response = JSON.parse(msg);
-      } catch {
-        query.onFinish("stop");
-        return;
-      }
-      const { choices } = response;
-      if (!choices || choices.length === 0) {
-        return { error: "No result" };
-      }
-      const { delta, finish_reason: finishReason } = choices[0];
-
-      if (finishReason) {
-        query.onFinish(finishReason);
-        return;
-      }
-
-      const { content = "", role } = delta;
-      let targetTxt = content;
-
-      if (
-        (isFirst && targetTxt.startsWith('"')) ||
-        targetTxt.startsWith("「")
-      ) {
-        targetTxt = targetTxt.slice(1);
-      }
-
-      if (!role) {
-        isFirst = false;
-      }
-
-      query.onMessage({ content: targetTxt, role });
-    },
-    onError: (err) => {
-      query.onError(err);
-    },
-  });
+export function summarize(onReceive: (text: string) => void) {
+  return async function (text: string) {
+    queryFn({
+      userPrompt: `translate from English to Chinese: ${text}`,
+      systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
+      onMessage(newMsg) {
+        onReceive(newMsg);
+      },
+    });
+  };
 }
 
 const api = {
   translate,
+  summarize,
 };
 
 export default api;
