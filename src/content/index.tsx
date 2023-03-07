@@ -161,6 +161,27 @@ const visibleInterval$ = interval(2000).pipe(
 );
 
 /**
+ * Functions
+ */
+
+function showAnnotationPanel(text: string) {
+  return function (rect: DOMRect) {
+    originTextElement.innerHTML = `${text}`;
+
+    showElement(
+      annotationPanel,
+      rect.bottom + window.scrollY,
+      rect.left + window.scrollX,
+      {
+        translateY: [8, 0],
+        duration: 240,
+        easing: "easeInOutSine",
+      }
+    );
+  };
+}
+
+/**
  * Everything happened after `mouseup`...
  */
 
@@ -230,30 +251,15 @@ mouseup$
           brackets: ["left", "right"],
         }).show();
 
-        function showAnnotationPanel(rect: DOMRect) {
-          originTextElement.innerHTML = `${text}`;
-
-          showElement(
-            annotationPanel,
-            rect.bottom + window.scrollY,
-            rect.left + window.scrollX,
-            {
-              translateY: [8, 0],
-              duration: 240,
-              easing: "easeInOutSine",
-            }
-          );
-        }
-
         const rect = annotationSpan.getBoundingClientRect();
-        showAnnotationPanel(rect);
+        showAnnotationPanel(text)(rect);
 
         const annotation$ = fromEvent(annotationSpan, "click");
         annotation$
           .pipe(
             map((evt) => (evt.target as HTMLDivElement).getBoundingClientRect())
           )
-          .subscribe(showAnnotationPanel);
+          .subscribe(showAnnotationPanel(text));
 
         annotationsStore.set(id, {
           element: annotationSpan,

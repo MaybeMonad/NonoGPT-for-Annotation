@@ -129,10 +129,16 @@ interface FetchSSEOptions extends RequestInit {
 
 export async function fetchSSE(input: string, options: FetchSSEOptions) {
   const { onMessage, onError, ...fetchOptions } = options;
-  const resp = await fetch(input, fetchOptions);
+  let response;
+  try {
+    response = await fetch(input, fetchOptions);
+  } catch (err) {
+    onError(err);
+    return;
+  }
 
-  if (resp.status !== 200) {
-    onError(await resp.json());
+  if (response.status !== 200) {
+    onError(await response.json());
     return;
   }
 
@@ -142,7 +148,7 @@ export async function fetchSSE(input: string, options: FetchSSEOptions) {
     }
   });
 
-  for await (const chunk of streamAsyncIterable(resp.body)) {
+  for await (const chunk of streamAsyncIterable(response.body)) {
     const str = new TextDecoder().decode(chunk);
     parser.feed(str);
   }

@@ -89,8 +89,7 @@ export async function translate(query: TranslateQuery) {
       query.onMessage({ content: targetTxt, role });
     },
     onError: (err) => {
-      const { error } = err;
-      query.onError(error.message);
+      query.onError(err);
     },
   });
 }
