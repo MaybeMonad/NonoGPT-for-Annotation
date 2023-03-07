@@ -1,4 +1,4 @@
-import { Observable, fromEvent, interval, merge, noop } from "rxjs";
+import { Observable, Subject, fromEvent, interval, merge, noop } from "rxjs";
 import {
   takeUntil,
   map,
@@ -13,6 +13,8 @@ import { match, P } from "ts-pattern";
 import { annotate } from "rough-notation";
 
 import {
+  Button,
+  Div,
   appendChild,
   appendTo,
   createElement,
@@ -25,6 +27,10 @@ import api from "~/content/api";
 import "./index.css";
 
 console.log("Content Script is Working!");
+
+/**
+ * Definitions
+ */
 
 const annotationsStore = new Map<
   string,
@@ -46,74 +52,55 @@ enum MessageType {
  * Register DOM Elements
  */
 
-const nonoGPTExtensionElement = createElement("div")({
-  className: "nono-gpt-extension",
+const nonoGPTExtensionElement = Div({
+  className: "main",
   callback: appendTo(document.body),
 });
 
-const triggerButton = createElement("button")({
-  className: "nono-gpt-extension__trigger-button",
+const triggerButton = Button({
+  className: "trigger-button",
   innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>`,
   callback: appendTo(nonoGPTExtensionElement),
 });
 
-const annotationPanel = createElement("div")({
-  className: "nono-gpt-extension__annotation-panel",
+const annotationPanel = Div({
+  className: "annotation-panel",
   innerHTML: `
     <div></div>
   `,
   callback: appendTo(document.body),
 });
 
-const originTextElement = createElement("div")({
-  className: "nono-gpt-extension__origin_text",
-  // innerHTML: `${text}`,
+const originTextElement = Div({
+  className: "origin_text",
   callback: appendTo(annotationPanel),
 });
 
-const actionButtonsElement = createElement("div")({
-  className: "nono-gpt-extension__action_buttons",
+const actionButtonsElement = Div({
+  className: "action_buttons",
   callback: appendTo(annotationPanel),
 });
 
-const translateButton = createElement("button")({
-  className: "nono-gpt-extension__translate-button",
+const translateButton = Button({
+  className: "translate-button",
   innerHTML: `Translate<span>ZH</span>`,
   callback: appendTo(actionButtonsElement),
 });
 
-fromEvent(translateButton, "click")
-  .pipe(
-    tap(() => {
-      resultElement.innerHTML = "";
-    }),
-    switchMap(() =>
-      api.translate({
-        text: selectedTextStore,
-        onMessage: ({ content }) => {
-          resultElement.innerHTML += content;
-        },
-        onError: console.log,
-        onFinish: console.log,
-      })
-    )
-  )
-  .subscribe(console.log);
-
-const summarizeButton = createElement("button")({
-  className: "nono-gpt-extension__summarize-button",
+const summarizeButton = Button({
+  className: "summarize-button",
   innerHTML: `Summarize`,
   callback: appendTo(actionButtonsElement),
 });
 
-const vocabularyButton = createElement("button")({
-  className: "nono-gpt-extension__vocabulary-button",
+const vocabularyButton = Button({
+  className: "vocabulary-button",
   innerHTML: `Vocabulary`,
   callback: appendTo(actionButtonsElement),
 });
 
-const resultElement = createElement("div")({
-  className: "nono-gpt-extension__result",
+const resultElement = Div({
+  className: "result",
   callback: appendTo(annotationPanel),
 });
 
@@ -159,6 +146,33 @@ const visibleInterval$ = interval(2000).pipe(
   map(() => MessageType.HideTriggerButton),
   repeat({ delay: () => startInterval$ })
 );
+
+const loading$ = interval(600).pipe(
+  takeUntil(triggerMousedown$),
+  repeat({ delay: () => mouseup$ }),
+  map(() => MessageType.HideTriggerButton)
+);
+
+const updateResult$ = new Subject();
+
+const translateButton$ = fromEvent(translateButton, "click")
+  .pipe(
+    tap(() => {
+      resultElement.innerHTML = "";
+    }),
+    switchMap(() =>
+      api.translate({
+        text: selectedTextStore,
+        onMessage: ({ content }) => {
+          resultElement.style.display = "block";
+          resultElement.innerHTML += content;
+        },
+        onError: console.log,
+        onFinish: console.log,
+      })
+    )
+  )
+  .subscribe(console.log);
 
 /**
  * Functions

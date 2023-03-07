@@ -1,14 +1,18 @@
 import { createParser } from "eventsource-parser";
 import anime from "animejs";
 
+type ElementProps = {
+  id?: string;
+  className?: string;
+  innerHTML?: string;
+  style?: Record<string, string | number>;
+  callback?: (elm: HTMLElement) => void;
+};
+
+export const $prefix = "nono-gpt-extension__";
+
 export function createElement(tagName: string) {
-  return function (props: {
-    id?: string;
-    className?: string;
-    innerHTML?: string;
-    style?: Record<string, string | number>;
-    callback?: (elm: HTMLElement) => void;
-  }) {
+  return function (props: ElementProps) {
     const { id, className, innerHTML, callback, style } = props;
     const element = document.createElement(tagName);
 
@@ -23,13 +27,21 @@ export function createElement(tagName: string) {
     }
 
     if (className) {
-      element.classList.add(className);
+      element.classList.add($prefix + className);
     }
 
     callback?.(element);
 
     return element;
   };
+}
+
+export function Div(props: ElementProps) {
+  return createElement("div")(props);
+}
+
+export function Button(props: ElementProps) {
+  return createElement("button")(props);
 }
 
 export function appendTo(target: HTMLElement) {
