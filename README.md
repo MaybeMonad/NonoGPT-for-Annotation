@@ -12,6 +12,6 @@ NonoGPT for Annotation 是一个整合了 ChatGPT 能力的网页标注工具，
 
 - [x] Annotation
 - [x] Translation
-- [ ] Summarization
+- [x] Summarization
 - [ ] Vocabulary Notebook
 - [ ] Export to X

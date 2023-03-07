@@ -6,6 +6,7 @@ import {
 interface Query {
   userPrompt: string;
   systemPrompt: string;
+  assistantPrompt: string;
   onMessage: (message: string) => void;
   // onError: (error: string) => void;
   // onFinish: (reason: string) => void;
@@ -35,6 +36,7 @@ export async function queryFn(query: Query) {
       presence_penalty: 1,
       messages: [
         { role: "system", content: query.systemPrompt },
+        { role: "assistant", content: query.assistantPrompt },
         { role: "user", content: query.userPrompt },
       ],
       stream: true,
@@ -102,8 +104,9 @@ export async function queryFn(query: Query) {
 export function translate(onReceive: (text: string) => void) {
   return async function (text: string) {
     queryFn({
-      userPrompt: `translate from English to Chinese: ${text}`,
+      userPrompt: text,
       systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
+      assistantPrompt: `Translate this text into Chinese.`,
       onMessage(newMsg) {
         onReceive(newMsg);
       },
@@ -114,8 +117,9 @@ export function translate(onReceive: (text: string) => void) {
 export function summarize(onReceive: (text: string) => void) {
   return async function (text: string) {
     queryFn({
-      userPrompt: `translate from English to Chinese: ${text}`,
-      systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
+      userPrompt: text,
+      systemPrompt: `You are a text summarizer, you can only summarize the text, do not interpret it.`,
+      assistantPrompt: `Summarize this text in the most concise language in Chinese.`,
       onMessage(newMsg) {
         onReceive(newMsg);
       },

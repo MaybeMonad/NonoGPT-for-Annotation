@@ -19,6 +19,7 @@ import {
 } from "rxjs/operators";
 import { match, P } from "ts-pattern";
 import { annotate } from "rough-notation";
+import type { RoughAnnotation } from "rough-notation/lib/model";
 
 import {
   Button,
@@ -26,7 +27,7 @@ import {
   Span,
   appendChild,
   appendTo,
-  getElement,
+  // getElement,
   // getLatestElement,
   hideElement,
   showElement,
@@ -34,7 +35,6 @@ import {
 import api from "~/content/api";
 
 import "./index.css";
-import { RoughAnnotation } from "rough-notation/lib/model";
 
 console.log("Content Script is Working!");
 
@@ -198,14 +198,28 @@ const translateButton$ = fromEvent(translateButton, "click")
   )
   .subscribe(console.log);
 
+const summarizeButton$ = fromEvent(summarizeButton, "click")
+  .pipe(
+    tap(() => {
+      resultElement.innerHTML = "";
+    }),
+    switchMap(() =>
+      api.summarize((result) => {
+        resultElement.style.display = "block";
+        resultElement.innerHTML += result;
+      })(selectedTextStore)
+    )
+  )
+  .subscribe(console.log);
+
 const originTextDeleteButton$ = fromEvent(originTextDeleteButton, "click").pipe(
   map(() => MessageType.HideAllPopup)
 );
 
 originTextDeleteButton$.subscribe(() => {
   if (annotationsStore.has(currentAnnotationId)) {
-    // console.log(annotationsStore.get(currentAnnotationId));
     const store = annotationsStore.get(currentAnnotationId);
+
     if (store) {
       store.annotationInstance.remove();
       store.subscription.unsubscribe();
@@ -285,17 +299,15 @@ mouseup$
       .with(MessageType.Highlight, () => {
         hideElement(nonoGPTExtensionElement);
 
-        // console.log(window.getSelection()?.toString());
         const text = window.getSelection()?.toString();
         const range = window.getSelection()?.getRangeAt?.(0);
+
         if (!range || !text) return;
 
-        // const selectedText = range.cloneContents();
         selectedTextStore = text;
         const clonedContent = range.cloneContents();
         range.deleteContents();
 
-        // const id = new Date().getTime().toString();
         const id = selectedTextStore;
         const annotationSpan = Span({
           id,
