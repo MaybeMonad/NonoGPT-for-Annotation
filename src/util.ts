@@ -47,6 +47,10 @@ export function Span(props: ElementProps) {
   return createElement("span")(props);
 }
 
+export function P(props: ElementProps) {
+  return createElement("p")(props);
+}
+
 export function appendTo(target: HTMLElement) {
   return function (element: HTMLElement) {
     if (target && element) {
@@ -78,28 +82,38 @@ export function hideElement(...targets: HTMLElement[]) {
   }
 }
 
-export function showElement(
-  target: HTMLElement,
-  top: number,
-  left: number,
-  motion: anime.AnimeParams,
-  innerHTML?: string
-) {
-  target.style.display = "block";
-  target.style.top = `${top}px`;
-  target.style.left = `${left}px`;
+export function showElement(options: {
+  top: number;
+  left: number;
+  motion: anime.AnimeParams;
+  style?: Record<string, string | number>;
+  innerHTML?: string;
+}) {
+  return function (target: HTMLElement) {
+    const { top, left, motion, style, innerHTML } = options;
+    const shouldAnimate = target.style.display === "none";
 
-  if (innerHTML) {
-    target.innerHTML = innerHTML;
-  }
+    setStyle(target, {
+      display: "block",
+      top: `${top}px`,
+      left: `${left}px`,
+      ...style,
+    });
 
-  anime({
-    targets: target,
-    easing: "easeInOutExpo",
-    duration: 240,
-    opacity: [0, 100],
-    ...motion,
-  });
+    if (innerHTML) {
+      target.innerHTML = innerHTML;
+    }
+
+    if (shouldAnimate) {
+      anime({
+        targets: target,
+        easing: "easeInOutExpo",
+        duration: 240,
+        opacity: [0, 100],
+        ...motion,
+      });
+    }
+  };
 }
 
 export function getLatestElement<P extends object>(
@@ -126,6 +140,7 @@ export function highlightSelection() {
   const endNode = range.endContainer;
   const startOffset = range.startOffset;
   const endOffset = range.endOffset;
+  const text = selection.toString();
 
   // Get the common ancestor of the start and end nodes
   let commonAncestor = range.commonAncestorContainer;
@@ -134,7 +149,7 @@ export function highlightSelection() {
   }
 
   // Create a new span element for the highlight
-  const id = selection.toString();
+  const id = text;
   const annotationSpan = Span({
     id,
     className: `annotation-highlighted-text`,
@@ -175,7 +190,7 @@ export function highlightSelection() {
   }
 
   const highlighted = {
-    text: selection.toString(),
+    text,
     start: startOffset,
     end: endOffset,
     html: annotationSpan.outerHTML,

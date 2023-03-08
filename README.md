@@ -4,14 +4,19 @@ NonoGPT for Annotation is a web annotation tool that integrates the abilities of
 
 NonoGPT for Annotation 是一个整合了 ChatGPT 能力的网页标注工具，支持翻译、总结、生词、汇总编辑、润色等功能。
 
-## Preview
-
-![Preview](preview.png)
+## Features
 
 🚧 Under construction
 
-- [x] Annotation
-- [x] Translation
-- [x] Summarization
+- [x] Annotation - 网页内容高亮标注
+- [x] Translation - 网页内容翻译
+- [x] Summarization - 网页内容总结
+- [x] Speedy Translation for Paragraph - 网页段落快速翻译
 - [ ] Vocabulary Notebook
 - [ ] Export to X
+
+## Preview
+
+![preview](preview.mp4)
+
+![Preview](preview.png)

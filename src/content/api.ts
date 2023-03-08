@@ -15,7 +15,6 @@ interface Query {
 export async function queryFn(query: Query) {
   class RetriableError extends Error {}
   class FatalError extends Error {}
-
   class StopStream extends Error {}
 
   function headers() {

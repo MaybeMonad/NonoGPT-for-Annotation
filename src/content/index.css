@@ -131,3 +131,48 @@
   display: flex;
   align-items: center;
 }
+
+.highlight-paragraph-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  background-color: #000;
+  color: white;
+  border: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 3px;
+  transition: all ease 0.2s;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.highlight-paragraph-button > svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.translated-paragraph-wrapper {
+  position: relative;
+  background-color: white;
+  border: 1px solid #222;
+  box-shadow: 4px 4px 0px 0 rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.translated-paragraph {
+  margin: 0 !important;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.8);
+  /* background-color: rgba(250, 0, 0, 0.08);
+  color: rgba(255, 0, 0, 0.8); */
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  width: 100%;
+  max-width: 100%;
+}

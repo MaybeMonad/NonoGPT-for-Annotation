@@ -16,21 +16,21 @@ import {
   filter,
   tap,
   switchMap,
+  throttleTime,
 } from "rxjs/operators";
-import { match, P } from "ts-pattern";
+import { match, Pattern } from "ts-pattern";
 import { annotate } from "rough-notation";
 import type { RoughAnnotation } from "rough-notation/lib/model";
 
 import {
+  $prefix,
   Button,
   Div,
-  Span,
-  appendChild,
+  P,
   appendTo,
-  // getElement,
-  // getLatestElement,
   hideElement,
   highlightSelection,
+  setStyle,
   showElement,
 } from "~/util";
 import api from "~/content/api";
@@ -57,6 +57,7 @@ const annotationsStore = new Map<
 
 let selectedTextStore = "";
 let currentAnnotationId = "";
+let currentParagraphElement = null as HTMLParagraphElement | null;
 
 enum MessageType {
   Translate = "translate",
@@ -65,6 +66,7 @@ enum MessageType {
   Highlight = "highlight",
   ShowAnnotationPanel = "showAnnotationPanel",
   HideAllPopup = "hideAllPopup",
+  TranslateParagraph = "translateParagraph",
 }
 
 /**
@@ -132,6 +134,12 @@ const vocabularyButton = Button({
 const resultElement = Div({
   className: "result",
   callback: appendTo(annotationPanel),
+});
+
+const highlightParagraphButton = Div({
+  className: "highlight-paragraph-button",
+  innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4v16"></path><path d="M17 4v16"></path><path d="M19 4H9.5a4.5 4.5 0 0 0 0 9H13"></path></svg>`,
+  callback: appendTo(document.body),
 });
 
 /**
@@ -229,6 +237,11 @@ originTextDeleteButton$.subscribe(() => {
   }
 });
 
+const highlightParagraphButton$ = fromEvent(
+  highlightParagraphButton,
+  "click"
+).pipe(map(() => MessageType.TranslateParagraph));
+
 /**
  * Functions
  */
@@ -240,18 +253,104 @@ function showAnnotationPanel(text: string) {
     const rect = target.getBoundingClientRect();
     originTextElement.innerHTML = `${text}`;
 
-    showElement(
-      annotationPanel,
-      rect.bottom + window.scrollY,
-      rect.left + window.scrollX,
-      {
+    showElement({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+      motion: {
         translateY: [8, 0],
         duration: 240,
         easing: "easeInOutSine",
-      }
-    );
+      },
+    })(annotationPanel);
   };
 }
+
+/**
+ * Everything happened hovering on paragraphs...
+ */
+const paragraphs = document.getElementsByTagName("p");
+
+for (const paragraph of paragraphs) {
+  fromEvent(paragraph, "mouseenter")
+    .pipe(
+      throttleTime(50),
+      filter(
+        (event) =>
+          (event.target as HTMLElement).nodeType === Node.ELEMENT_NODE &&
+          (event.target as HTMLElement).nodeName === "P"
+      )
+    )
+    .subscribe((event) => {
+      const { top, left } = (
+        event.target as HTMLParagraphElement
+      ).getBoundingClientRect();
+      currentParagraphElement = event.target as HTMLParagraphElement;
+
+      showElement({
+        top: top + window.scrollY + 6,
+        left: left + window.scrollX - 28,
+        motion: {
+          translateX: [8, 0],
+          duration: 500,
+          easing: "easeInOutSine",
+        },
+        style: {
+          display: "flex",
+        },
+      })(highlightParagraphButton);
+    });
+}
+
+highlightParagraphButton$.pipe().subscribe(() => {
+  if (currentParagraphElement) {
+    console.log(currentParagraphElement.style);
+    const translatedParagraphWrapper = Div({
+      className: "translated-paragraph-wrapper",
+      style: {
+        marginTop: currentParagraphElement.style.marginTop,
+        marginBottom: currentParagraphElement.style.marginBottom || "18px",
+      },
+    });
+
+    const translatedTextElement = currentParagraphElement.cloneNode(
+      true
+    ) as HTMLParagraphElement;
+
+    translatedTextElement.innerText = "Translating...";
+    translatedTextElement.setAttribute("data-translated", "translated");
+    translatedTextElement.classList.add(`${$prefix}translated-paragraph`);
+
+    currentParagraphElement.setAttribute("data-translated", "original");
+    setStyle(currentParagraphElement, {
+      backgroundColor: "rgba(255, 255, 0, 0.25)",
+      margin: 0,
+      padding: "12px",
+      color: "rgba(0, 0, 0, 0.8)",
+    });
+
+    const clonedParagraphElement = currentParagraphElement.cloneNode(true);
+
+    translatedParagraphWrapper.append(
+      clonedParagraphElement,
+      translatedTextElement
+    );
+
+    currentParagraphElement.parentElement?.replaceChild(
+      translatedParagraphWrapper,
+      currentParagraphElement
+    );
+
+    let isFirst = true;
+
+    api.translate((result) => {
+      if (isFirst) {
+        translatedTextElement.innerText = "";
+        isFirst = false;
+      }
+      translatedTextElement.innerText += result;
+    })((clonedParagraphElement as HTMLParagraphElement).innerText);
+  }
+});
 
 /**
  * Everything happened after `mouseup`...
@@ -274,11 +373,12 @@ mouseup$
       mousedown$,
       triggerMousedown$,
       triggerMouseup$,
-      originTextDeleteButton$
+      originTextDeleteButton$,
+      highlightParagraphButton$
     )
   )
   .subscribe((event) => {
-    console.log({ event });
+    // console.log({ event });
     match(event)
       .with(MessageType.HideTriggerButton, () => {
         hideElement(nonoGPTExtensionElement);
@@ -286,23 +386,17 @@ mouseup$
       .with(MessageType.HideAllPopup, () => {
         hideElement(nonoGPTExtensionElement, annotationPanel);
       })
-      // .with(MessageType.ShowAnnotationPanel, () => {
-      //   const { element } = getLatestElement(annotationsStore) || {};
-      //   if (!element) return;
-
-      //   const rect = element.getBoundingClientRect();
-      //   showElement(
-      //     annotationPanel,
-      //     rect.bottom + window.scrollY,
-      //     rect.left + window.scrollX
-      //   );
-      // })
+      .with(MessageType.TranslateParagraph, () => {
+        console.log("Translate Paragraph");
+      })
       .with(MessageType.Highlight, () => {
         hideElement(nonoGPTExtensionElement);
 
         const { text, container } = highlightSelection() || {};
 
         if (!text || !container) return;
+
+        selectedTextStore = text;
 
         const annotation = annotate(container, {
           type: "highlight",
@@ -322,16 +416,19 @@ mouseup$
         annotationsStore.set(text, {
           element: container,
           originalText: text,
-          // originalElement: container,
           observable: annotation$,
           subscription,
           annotationInstance: annotation,
         });
       })
-      .with({ selectedContent: P.string }, (data) => {
-        showElement(nonoGPTExtensionElement, data.y, data.x, {
-          scale: [0, 1],
-        });
+      .with({ selectedContent: Pattern.string }, (data) => {
+        showElement({
+          top: data.y,
+          left: data.x,
+          motion: {
+            scale: [0, 1],
+          },
+        })(nonoGPTExtensionElement);
       })
       .otherwise(() => noop);
   });
