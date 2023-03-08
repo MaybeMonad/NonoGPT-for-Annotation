@@ -30,6 +30,7 @@ import {
   // getElement,
   // getLatestElement,
   hideElement,
+  highlightSelection,
   showElement,
 } from "~/util";
 import api from "~/content/api";
@@ -48,7 +49,7 @@ const annotationsStore = new Map<
     element: HTMLElement;
     observable: Observable<Event>;
     originalText: string;
-    originalElement: DocumentFragment;
+    // originalElement: DocumentFragment;
     annotationInstance: RoughAnnotation;
     subscription: Subscription;
   }
@@ -299,47 +300,29 @@ mouseup$
       .with(MessageType.Highlight, () => {
         hideElement(nonoGPTExtensionElement);
 
-        const text = window.getSelection()?.toString();
-        const range = window.getSelection()?.getRangeAt?.(0);
+        const { text, container } = highlightSelection() || {};
 
-        if (!range || !text) return;
+        if (!text || !container) return;
 
-        selectedTextStore = text;
-        const clonedContent = range.cloneContents();
-        range.deleteContents();
-
-        const id = selectedTextStore;
-        const annotationSpan = Span({
-          id,
-          className: `annotation-highlighted-text`,
-          style: {
-            whiteSpace: "pre-wrap",
-          },
-          callback: appendChild(clonedContent),
-        });
-
-        range.insertNode(annotationSpan);
-
-        const annotation = annotate(annotationSpan, {
+        const annotation = annotate(container, {
           type: "highlight",
           multiline: true,
           color: "rgb(255, 213, 79)",
           brackets: ["left", "right"],
         });
-
         annotation.show();
 
-        showAnnotationPanel(text)(annotationSpan);
+        showAnnotationPanel(text)(container);
 
-        const annotation$ = fromEvent(annotationSpan, "click");
+        const annotation$ = fromEvent(container, "click");
         const subscription = annotation$
           .pipe(map((evt) => evt.target as HTMLDivElement))
           .subscribe(showAnnotationPanel(text));
 
-        annotationsStore.set(id, {
-          element: annotationSpan,
+        annotationsStore.set(text, {
+          element: container,
           originalText: text,
-          originalElement: clonedContent,
+          // originalElement: container,
           observable: annotation$,
           subscription,
           annotationInstance: annotation,

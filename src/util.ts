@@ -116,3 +116,71 @@ export function getElement<P extends object>(
   const id = element.getAttribute("data-annotation-id");
   return id ? store.get(id) : undefined;
 }
+
+export function highlightSelection() {
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const range = selection.getRangeAt(0);
+  const startNode = range.startContainer;
+  const endNode = range.endContainer;
+  const startOffset = range.startOffset;
+  const endOffset = range.endOffset;
+
+  // Get the common ancestor of the start and end nodes
+  let commonAncestor = range.commonAncestorContainer;
+  while (commonAncestor.nodeType !== Node.ELEMENT_NODE) {
+    commonAncestor = commonAncestor.parentNode ?? commonAncestor;
+  }
+
+  // Create a new span element for the highlight
+  const id = selection.toString();
+  const annotationSpan = Span({
+    id,
+    className: `annotation-highlighted-text`,
+  });
+
+  // If the start and end nodes are the same, wrap them in the span element
+  if (startNode === endNode) {
+    if (startNode.nodeType === Node.TEXT_NODE) {
+      const highlightedText = (startNode as Text).splitText(startOffset);
+      highlightedText.splitText(endOffset - startOffset);
+      const clonedText = highlightedText.cloneNode(true);
+      annotationSpan.appendChild(clonedText);
+      highlightedText.parentNode?.replaceChild(annotationSpan, highlightedText);
+    } else {
+      console.warn(
+        "startNode.nodeType !== Node.TEXT_NODE",
+        startNode.nodeType,
+        Node.TEXT_NODE
+      );
+    }
+
+    // If the start and end nodes are different, wrap the start node in the span and add any intervening nodes
+  } else {
+    let currentNode = startNode.nextSibling;
+    while (currentNode !== null && currentNode !== endNode) {
+      annotationSpan.appendChild(currentNode);
+      currentNode = currentNode.nextSibling;
+    }
+
+    const clonedEndNode = endNode.cloneNode(true);
+    (clonedEndNode as Text).splitText(endOffset);
+
+    const startText = (startNode as Text).splitText(startOffset);
+    annotationSpan.prepend(startText.cloneNode(true));
+    (endNode as Text).splitText(endOffset);
+    annotationSpan.appendChild(endNode);
+    startNode.parentNode?.replaceChild(annotationSpan, startText);
+  }
+
+  const highlighted = {
+    text: selection.toString(),
+    start: startOffset,
+    end: endOffset,
+    html: annotationSpan.outerHTML,
+    container: annotationSpan,
+  };
+
+  return highlighted;
+}
