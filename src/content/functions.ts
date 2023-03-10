@@ -2,6 +2,7 @@
  * Functions
  */
 
+import { interval, map } from "rxjs";
 import * as globalStore from "~/content/store";
 import { showElement } from "~/util";
 
@@ -29,4 +30,16 @@ export function showAnnotationPanel(options: {
       },
     })(options.panelElement);
   };
+}
+
+export function useLoading(actionOnLoading: (frame: string) => void) {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+  const loading$ = interval(80)
+    .pipe(map((i) => frames[i % frames.length]))
+    .subscribe((frame) => {
+      actionOnLoading(frame);
+    });
+
+  return { loading$ };
 }

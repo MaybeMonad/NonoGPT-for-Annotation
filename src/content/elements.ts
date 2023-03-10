@@ -100,6 +100,9 @@ export const vocabularyButton = Button({
 
 export const resultElement = Div({
   className: "result",
+  style: {
+    display: "none",
+  },
   callback: appendTo(annotationPanel.element),
 });
 

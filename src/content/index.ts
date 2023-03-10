@@ -12,7 +12,7 @@ import { match, Pattern } from "ts-pattern";
 import { annotate } from "rough-notation";
 
 import { hideElement, highlightSelection, showElement } from "~/util";
-import { showAnnotationPanel } from "~/content/functions";
+import { showAnnotationPanel, useLoading } from "~/content/functions";
 import * as store from "~/content/store";
 import { MessageType } from "~/content/constants";
 import * as elements from "~/content/elements";
@@ -25,18 +25,42 @@ console.log("Content Script is Working!");
 
 elements.translateButton.listeners.click$
   .pipe(
-    switchMap(() =>
-      api.translate((result) => {
-        elements.resultElement.element.style.display = "block";
+    map(() => {
+      elements.resultElement.element.style.display = "block";
+      const { loading$ } = useLoading((frame) => {
+        elements.resultElement.element.innerHTML = `${frame} loading...`;
+      });
+
+      return loading$;
+    }),
+    switchMap((loading$) =>
+      api.translate((result, isFirst) => {
+        if (isFirst) {
+          loading$.unsubscribe();
+          elements.resultElement.element.innerHTML = "";
+        }
         elements.resultElement.element.innerHTML += result;
       })(store.selectedTextStore.getState())
     )
   )
   .subscribe();
+
 elements.summarizeButton.listeners.click$
   .pipe(
-    switchMap(() =>
-      api.summarize((result) => {
+    map(() => {
+      elements.resultElement.element.style.display = "block";
+      const { loading$ } = useLoading((frame) => {
+        elements.resultElement.element.innerHTML = `${frame} loading...`;
+      });
+
+      return loading$;
+    }),
+    switchMap((loading$) =>
+      api.summarize((result, isFirst) => {
+        if (isFirst) {
+          loading$.unsubscribe();
+          elements.resultElement.element.innerHTML = "";
+        }
         elements.resultElement.element.style.display = "block";
         elements.resultElement.element.innerHTML += result;
       })(store.selectedTextStore.getState())

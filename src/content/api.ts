@@ -100,27 +100,35 @@ export async function queryFn(query: Query) {
   }
 }
 
-export function translate(onReceive: (text: string) => void) {
+export function translate(onReceive: (text: string, isFirst: boolean) => void) {
+  let isFirst = true;
   return async function (text: string) {
     queryFn({
       userPrompt: text,
       systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
       assistantPrompt: `Translate this text into Chinese.`,
       onMessage(newMsg) {
-        onReceive(newMsg);
+        onReceive(newMsg, isFirst);
+        if (isFirst) {
+          isFirst = false;
+        }
       },
     });
   };
 }
 
-export function summarize(onReceive: (text: string) => void) {
+export function summarize(onReceive: (text: string, isFirst: boolean) => void) {
+  let isFirst = true;
   return async function (text: string) {
     queryFn({
       userPrompt: text,
       systemPrompt: `You are a text summarizer, you can only summarize the text, do not interpret it.`,
       assistantPrompt: `Summarize this text in the most concise language in Chinese.`,
       onMessage(newMsg) {
-        onReceive(newMsg);
+        onReceive(newMsg, isFirst);
+        if (isFirst) {
+          isFirst = false;
+        }
       },
     });
   };

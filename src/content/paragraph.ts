@@ -1,10 +1,11 @@
 /**
  * Everything happened hovering on paragraphs...
  */
-import { fromEvent, throttleTime, filter } from "rxjs";
+import { fromEvent, throttleTime, filter, interval, map, take } from "rxjs";
 
 import api from "~/content/api";
 import * as elements from "~/content/elements";
+import { useLoading } from "~/content/functions";
 import * as globalStore from "~/content/store";
 import { showElement, Div, $prefix, setStyle } from "~/util";
 
@@ -63,7 +64,10 @@ export default function speedyTranslationForParagraph(
         true
       ) as HTMLParagraphElement;
 
-      translatedTextElement.innerText = "Translating...";
+      const { loading$ } = useLoading((frame) => {
+        translatedTextElement.innerText = `${frame} Translating...`;
+      });
+
       translatedTextElement.setAttribute("data-translated", "translated");
       translatedTextElement.classList.add(`${$prefix}translated-paragraph`);
 
@@ -87,12 +91,10 @@ export default function speedyTranslationForParagraph(
         paragraph
       );
 
-      let isFirst = true;
-
-      api.translate((result) => {
+      api.translate((result, isFirst) => {
         if (isFirst) {
+          loading$.unsubscribe();
           translatedTextElement.innerText = "";
-          isFirst = false;
         }
         translatedTextElement.innerText += result;
       })((clonedParagraphElement as HTMLParagraphElement).innerText);
