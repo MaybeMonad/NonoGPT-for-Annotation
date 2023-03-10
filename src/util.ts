@@ -121,12 +121,12 @@ export function hideElement(...targets: HTMLElement[]) {
 export function showElement(options: {
   top?: number;
   left?: number;
-  motion: anime.AnimeParams;
+  motion?: anime.AnimeParams;
   style?: Record<string, string | number>;
   innerHTML?: string;
 }) {
   return function (target: HTMLElement) {
-    const { top, left, motion, style, innerHTML } = options;
+    const { top, left, motion = {}, style, innerHTML } = options;
     const shouldAnimate = target.style.display === "none";
 
     setStyle(target, {

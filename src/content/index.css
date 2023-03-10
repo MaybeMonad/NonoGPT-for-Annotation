@@ -192,8 +192,111 @@
   bottom: 20px;
   background-color: #000;
   color: white;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+}
+
+.annotations-board {
+  display: none;
+  width: calc(100vw - 40px);
+  height: calc(100vh - 40px);
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #fff;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-sizing: border-box;
+  z-index: 100000;
+}
+
+.annotations-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-gap: 20px;
+  padding: 20px;
+}
+
+.annotation-card {
+  padding: 16px;
+  background-color: #fff;
+  color: #333;
+  font-size: 13px;
+  line-height: 18px;
+  border: 1px solid #222;
+  box-shadow: 4px 4px 0px 0 rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+}
+
+.annotation-card > div {
+  padding: 8px;
+}
+
+.annotation-card > .original-text {
+  font-size: 14px;
+  background-color: rgba(255, 255, 0, 0.25);
+  font-weight: 500;
+  color: #222;
+}
+
+.annotation-card > .translated-text,
+.annotation-card > .summarized-text,
+.annotation-card > .definition-text {
+  font-size: 12px;
+  line-height: 16px;
+  color: #444;
+}
+
+.annotation-card > .translated-text {
+  background-color: rgba(0, 0, 0, 0.065);
+}
+
+.annotation-card > .summarized-text {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.annotation-card > .definition-text {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.annotations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.annotations-header > h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.annotations-header-actions {
+  display: flex;
+}
+
+.annotations-header-actions > button {
+  background-color: #efefef;
+  box-shadow: none;
+  border: none;
+  padding: 2px 12px;
+  border-radius: 4px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+.annotations-header-actions > button:hover {
+  background-color: #dfdfdf;
 }

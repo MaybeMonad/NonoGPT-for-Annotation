@@ -9,13 +9,15 @@ interface Query {
   assistantPrompt: string;
   onMessage: (message: string) => void;
   // onError: (error: string) => void;
-  // onFinish: (reason: string) => void;
+  onFinish: (receivedText: string) => void;
 }
 
 export async function queryFn(query: Query) {
   class RetriableError extends Error {}
   class FatalError extends Error {}
   class StopStream extends Error {}
+
+  let receivedText = "";
 
   function headers() {
     const apiKey = import.meta.env.VITE_OPENAI_KEY;
@@ -69,13 +71,16 @@ export async function queryFn(query: Query) {
         }
 
         if (msg.data === "[DONE]") {
+          query.onFinish(receivedText);
           throw new StopStream("DONE");
         }
 
         try {
           const parsedData = JSON.parse(msg.data);
-          if (parsedData.choices[0].delta.content) {
-            query.onMessage(parsedData.choices[0].delta.content as string);
+          const text = parsedData.choices[0].delta.content;
+          if (typeof text === "string" && text) {
+            receivedText += text;
+            query.onMessage(text);
           }
         } catch (err) {
           console.error("JSON parse failed", err);
@@ -100,7 +105,10 @@ export async function queryFn(query: Query) {
   }
 }
 
-export function translate(onReceive: (text: string, isFirst: boolean) => void) {
+export function translate(
+  onReceive: (text: string, isFirst: boolean) => void,
+  onFinish: (text: string) => void
+) {
   let isFirst = true;
   return async function (text: string) {
     queryFn({
@@ -113,11 +121,17 @@ export function translate(onReceive: (text: string, isFirst: boolean) => void) {
           isFirst = false;
         }
       },
+      onFinish(totalReceived) {
+        onFinish(totalReceived);
+      },
     });
   };
 }
 
-export function summarize(onReceive: (text: string, isFirst: boolean) => void) {
+export function summarize(
+  onReceive: (text: string, isFirst: boolean) => void,
+  onFinish: (text: string) => void
+) {
   let isFirst = true;
   return async function (text: string) {
     queryFn({
@@ -130,11 +144,17 @@ export function summarize(onReceive: (text: string, isFirst: boolean) => void) {
           isFirst = false;
         }
       },
+      onFinish(totalReceived) {
+        onFinish(totalReceived);
+      },
     });
   };
 }
 
-export function definite(onReceive: (text: string, isFirst: boolean) => void) {
+export function definite(
+  onReceive: (text: string, isFirst: boolean) => void,
+  onFinish: (text: string) => void
+) {
   let isFirst = true;
   return async function (text: string) {
     queryFn({
@@ -146,6 +166,9 @@ export function definite(onReceive: (text: string, isFirst: boolean) => void) {
         if (isFirst) {
           isFirst = false;
         }
+      },
+      onFinish(totalReceived) {
+        onFinish(totalReceived);
       },
     });
   };

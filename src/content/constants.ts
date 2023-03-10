@@ -7,4 +7,5 @@ export enum MessageType {
   HideAllPopup = "hideAllPopup",
   TranslateParagraph = "translateParagraph",
   ShowAnnotationsBoard = "showAnnotationsBoard",
+  HideAnnotationsBoard = "hideAnnotationsBoard",
 }

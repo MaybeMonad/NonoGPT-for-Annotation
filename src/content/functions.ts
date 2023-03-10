@@ -16,6 +16,7 @@ export function useAnnotationPanel(options: {
     options.store.currentAnnotationId.setState(
       target.getAttribute("data-annotation-id") || ""
     );
+    options.store.selectedTextStore.setState(options.text);
 
     const rect = target.getBoundingClientRect();
     options.originTextElement.innerHTML = `${options.text}`;

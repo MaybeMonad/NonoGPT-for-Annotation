@@ -73,7 +73,7 @@ export default function speedyTranslationForParagraph(
       paragraph.setAttribute("data-translated", "original");
       setStyle(paragraph, {
         backgroundColor: "rgba(255, 255, 0, 0.25)",
-        margin: 0,
+        margin: "0px",
         padding: "12px",
         color: "rgba(0, 0, 0, 0.8)",
       });
@@ -90,13 +90,18 @@ export default function speedyTranslationForParagraph(
         paragraph
       );
 
-      api.translate((result, isFirst) => {
-        if (isFirst) {
-          loading$.unsubscribe();
-          translatedTextElement.innerText = "";
+      api.translate(
+        (result, isFirst) => {
+          if (isFirst) {
+            loading$.unsubscribe();
+            translatedTextElement.innerText = "";
+          }
+          translatedTextElement.innerText += result;
+        },
+        (receivedText) => {
+          console.log(receivedText);
         }
-        translatedTextElement.innerText += result;
-      })((clonedParagraphElement as HTMLParagraphElement).innerText);
+      )((clonedParagraphElement as HTMLParagraphElement).innerText);
     }
   });
 }

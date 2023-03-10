@@ -15,6 +15,9 @@ export const annotations = atom(
       originalText: string;
       annotationInstance: RoughAnnotation;
       subscription: Subscription;
+      translate: string;
+      summarize: string;
+      definite: string;
     }
   >()
 );

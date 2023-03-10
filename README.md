@@ -15,6 +15,7 @@ Latest update: [Twitter](https://twitter.com/CaptainMartinIO/status/163243022065
 - [x] Summarization - 网页内容总结
 - [x] Speedy Translation for Paragraph - 网页段落快速翻译
 - [x] Definition - 生词定义
+- [x] Annotation Board - 标注汇总
 - [ ] Vocabulary Notebook
 - [ ] Export to X
 

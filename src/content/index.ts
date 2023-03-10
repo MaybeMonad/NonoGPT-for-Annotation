@@ -11,7 +11,7 @@ import {
 import { match, Pattern } from "ts-pattern";
 import { annotate } from "rough-notation";
 
-import { hideElement, highlightSelection, showElement } from "~/util";
+import { $prefix, hideElement, highlightSelection, showElement } from "~/util";
 import { useAnnotationPanel, useLoading } from "~/content/functions";
 import * as store from "~/content/store";
 import { MessageType } from "~/content/constants";
@@ -34,13 +34,28 @@ function actionButton(event: Observable<Event>, action: keyof typeof api) {
       return loading$;
     }),
     switchMap((loading$) =>
-      api[action]((result, isFirst) => {
-        if (isFirst) {
-          loading$.unsubscribe();
-          elements.resultElement.element.innerHTML = "";
+      api[action](
+        (result, isFirst) => {
+          if (isFirst) {
+            loading$.unsubscribe();
+            elements.resultElement.element.innerHTML = "";
+          }
+          elements.resultElement.element.innerHTML += result;
+        },
+        (receivedText) => {
+          const annotations = store.annotations.getState();
+          const annotationId = store.currentAnnotationId.getState();
+          const annotation = annotations.get(annotationId);
+
+          if (annotation) {
+            const newState = annotations.set(annotationId, {
+              ...annotation,
+              [action]: receivedText,
+            });
+            store.annotations.setState(newState);
+          }
         }
-        elements.resultElement.element.innerHTML += result;
-      })(store.selectedTextStore.getState())
+      )(store.selectedTextStore.getState())
     )
   );
 }
@@ -154,7 +169,8 @@ mouseup$
       elements.triggerButton.listeners.mouseup$,
       elements.originTextDeleteButton.listeners.click$,
       elements.highlightParagraphButton.listeners.click$,
-      elements.annotationsCountButton.listeners.click$
+      elements.annotationsCountButton.listeners.click$,
+      elements.closeAnnotationsBoard.listeners.click$
     )
   )
   .subscribe((event) => {
@@ -172,8 +188,30 @@ mouseup$
       .with(MessageType.TranslateParagraph, () => {
         console.log("Translate Paragraph");
       })
+      .with(MessageType.HideAnnotationsBoard, () => {
+        hideElement(elements.annotationsBoard.element);
+      })
       .with(MessageType.ShowAnnotationsBoard, () => {
         console.log("Show Annotation Board");
+        const annotations = Array.from(
+          store.annotations.getState().values()
+        ).map((annotation) => {
+          return `<div class="${$prefix}annotation-card">
+          <div class="original-text">${annotation.originalText}</div>
+          <div class="translated-text">${annotation.translate}</div>
+          <div class="summarized-text">${annotation.summarize}</div>
+          <div class="definition-text">${annotation.definite}</div>
+          </div>`;
+        });
+
+        elements.annotationCards.element.innerHTML = annotations.join("");
+
+        showElement({
+          motion: {
+            scale: [0.8, 1],
+            duration: 500,
+          },
+        })(elements.annotationsBoard.element);
       })
       .with(MessageType.Highlight, () => {
         hideElement(elements.nonoGPTExtensionElement.element);
@@ -212,6 +250,9 @@ mouseup$
           observable: annotation$,
           subscription,
           annotationInstance: annotation,
+          translate: "",
+          summarize: "",
+          definite: "",
         });
 
         store.annotations.setState(newState);

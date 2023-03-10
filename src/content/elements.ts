@@ -137,15 +137,47 @@ export const annotationsCountButton = Div(
   {
     className: "annotations-count-button",
     innerHTML: `0`,
-    style: {
-      display: "none",
-      position: "fixed",
-      right: 20,
-      bottom: 20,
-    },
     mount: appendTo(document.body),
   },
   {
     click$: (event) => event.pipe(map(() => MessageType.ShowAnnotationsBoard)),
   }
 );
+
+export const annotationsBoard = Div({
+  className: "annotations-board",
+  mount: appendTo(document.body),
+});
+
+export const annotationHeader = Div({
+  className: "annotations-header",
+  innerHTML: `<h3>Annotations</h3>`,
+  mount: appendTo(annotationsBoard.element),
+});
+
+export const annotationCards = Div({
+  className: "annotations-cards",
+  mount: appendTo(annotationsBoard.element),
+});
+
+export const annotationHeaderActions = Div({
+  className: "annotations-header-actions",
+  mount: appendTo(annotationHeader.element),
+});
+
+export const closeAnnotationsBoard = Button(
+  {
+    className: "close-annotations-board",
+    innerHTML: `Close`,
+    mount: appendTo(annotationHeaderActions.element),
+  },
+  {
+    click$: (event) => event.pipe(map(() => MessageType.HideAnnotationsBoard)),
+  }
+);
+
+export const exportAnnotationsButton = Button({
+  className: "export-annotations-button",
+  innerHTML: `Export`,
+  mount: appendTo(annotationHeaderActions.element),
+});
