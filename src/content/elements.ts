@@ -132,3 +132,20 @@ export const highlightParagraphButton = Div(
     click$: (event) => event.pipe(map(() => MessageType.TranslateParagraph)),
   }
 );
+
+export const annotationsCountButton = Div(
+  {
+    className: "annotations-count-button",
+    innerHTML: `0`,
+    style: {
+      display: "none",
+      position: "fixed",
+      right: 20,
+      bottom: 20,
+    },
+    mount: appendTo(document.body),
+  },
+  {
+    click$: (event) => event.pipe(map(() => MessageType.ShowAnnotationsBoard)),
+  }
+);

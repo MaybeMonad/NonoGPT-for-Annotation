@@ -1,7 +1,7 @@
 /**
  * Everything happened hovering on paragraphs...
  */
-import { fromEvent, throttleTime, filter, interval, map, take } from "rxjs";
+import { fromEvent, throttleTime, filter } from "rxjs";
 
 import api from "~/content/api";
 import * as elements from "~/content/elements";
@@ -49,7 +49,6 @@ export default function speedyTranslationForParagraph(
   }
 
   highlightParagraphButton.listeners.click$.subscribe(() => {
-    // console.log(3333, store.currentParagraphElement.getState());
     const paragraph = store.currentParagraphElement.getState();
     if (paragraph) {
       const { element: translatedParagraphWrapper } = Div({
@@ -61,7 +60,7 @@ export default function speedyTranslationForParagraph(
       });
 
       const translatedTextElement = paragraph.cloneNode(
-        true
+        false
       ) as HTMLParagraphElement;
 
       const { loading$ } = useLoading((frame) => {

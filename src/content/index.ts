@@ -67,19 +67,20 @@ elements.originTextDeleteButton.listeners.click$.subscribe(() => {
   const currentId = store.currentAnnotationId.getState();
 
   if (annotations.has(currentId)) {
-    const store = annotations.get(currentId);
+    const annotation = annotations.get(currentId);
 
-    if (store) {
-      store.element.classList.add("invalid");
-      store.annotationInstance.remove();
-      store.subscription.unsubscribe();
-      // store.element.replaceWith(store.originalElement);
+    if (annotation) {
+      annotation.element.classList.add("invalid");
+      annotation.annotationInstance.remove();
+      annotation.subscription.unsubscribe();
+      annotations.delete(currentId);
+      store.annotations.setState(annotations);
     }
   }
 });
 
-export const mouseup$ = fromEvent(document, "mouseup");
-export const mousedown$ = fromEvent(document, "mousedown").pipe(
+const mouseup$ = fromEvent(document, "mouseup");
+const mousedown$ = fromEvent(document, "mousedown").pipe(
   takeUntil(elements.triggerButton.listeners.mousedown$),
   repeat({ delay: () => mouseup$ }),
   map((event) =>
@@ -89,7 +90,7 @@ export const mousedown$ = fromEvent(document, "mousedown").pipe(
   )
 );
 
-export const startInterval$ = merge(
+const startInterval$ = merge(
   mouseup$,
   elements.triggerButton.listeners.mouseleave$
 ).pipe(
@@ -99,25 +100,35 @@ export const startInterval$ = merge(
     (event) => !elements.annotationPanel.element.contains(event.target as Node)
   )
 );
-export const stopInterval$ = merge(
+const stopInterval$ = merge(
   elements.triggerButton.listeners.mouseenter$,
   mousedown$,
   elements.triggerButton.listeners.mousedown$,
   elements.triggerButton.listeners.mouseup$
 );
 
-export const visibleInterval$ = interval(2000).pipe(
+const visibleInterval$ = interval(2000).pipe(
   takeUntil(stopInterval$),
   take(1),
   map(() => MessageType.HideTriggerButton),
   repeat({ delay: () => startInterval$ })
 );
 
-export const loading$ = interval(600).pipe(
-  takeUntil(elements.triggerButton.listeners.mousedown$),
-  repeat({ delay: () => mouseup$ }),
-  map(() => MessageType.HideTriggerButton)
-);
+store.annotations.subscribe((annotations) => {
+  if (annotations.size > 0) {
+    showElement({
+      style: {
+        display: "flex",
+      },
+      motion: {
+        scale: [0, 1],
+      },
+      innerHTML: `${annotations.size}`,
+    })(elements.annotationsCountButton.element);
+  } else {
+    hideElement(elements.annotationsCountButton.element);
+  }
+});
 
 /**
  * Everything happened after `mouseup`...
@@ -142,7 +153,8 @@ mouseup$
       elements.triggerButton.listeners.mousedown$,
       elements.triggerButton.listeners.mouseup$,
       elements.originTextDeleteButton.listeners.click$,
-      elements.highlightParagraphButton.listeners.click$
+      elements.highlightParagraphButton.listeners.click$,
+      elements.annotationsCountButton.listeners.click$
     )
   )
   .subscribe((event) => {
@@ -159,6 +171,9 @@ mouseup$
       })
       .with(MessageType.TranslateParagraph, () => {
         console.log("Translate Paragraph");
+      })
+      .with(MessageType.ShowAnnotationsBoard, () => {
+        console.log("Show Annotation Board");
       })
       .with(MessageType.Highlight, () => {
         hideElement(elements.nonoGPTExtensionElement.element);

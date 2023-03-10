@@ -103,10 +103,12 @@ export function appendChild(child: DocumentFragment) {
 
 export function setStyle(
   target: HTMLElement,
-  styles: Record<string, string | number>
+  styles: Record<string, string | number | undefined>
 ) {
   Object.keys(styles).forEach((key) => {
-    target.style[key as any] = styles[key] as string;
+    if (styles[key]) {
+      target.style[key as any] = styles[key] as string;
+    }
   });
 }
 
@@ -117,8 +119,8 @@ export function hideElement(...targets: HTMLElement[]) {
 }
 
 export function showElement(options: {
-  top: number;
-  left: number;
+  top?: number;
+  left?: number;
   motion: anime.AnimeParams;
   style?: Record<string, string | number>;
   innerHTML?: string;
@@ -129,8 +131,8 @@ export function showElement(options: {
 
     setStyle(target, {
       display: "block",
-      top: `${top}px`,
-      left: `${left}px`,
+      top: top && `${top}px`,
+      left: left && `${left}px`,
       ...style,
     });
 
@@ -208,18 +210,28 @@ export function highlightSelection() {
     // If the start and end nodes are different, wrap the start node in the span and add any intervening nodes
   } else {
     let currentNode = startNode.nextSibling;
+
     while (currentNode !== null && currentNode !== endNode) {
-      annotationSpan.appendChild(currentNode);
+      const clonedNode = currentNode.cloneNode(true);
+      annotationSpan.appendChild(clonedNode);
+      const currentNodeShadow = currentNode;
       currentNode = currentNode.nextSibling;
+      currentNodeShadow.remove();
     }
 
     const clonedEndNode = endNode.cloneNode(true);
-    (clonedEndNode as Text).splitText(endOffset);
+
+    if (clonedEndNode.nodeType === Node.TEXT_NODE) {
+      (clonedEndNode as Text).splitText(endOffset);
+    }
 
     const startText = (startNode as Text).splitText(startOffset);
+
     annotationSpan.prepend(startText.cloneNode(true));
-    (endNode as Text).splitText(endOffset);
-    annotationSpan.appendChild(endNode);
+    if (endNode.nodeType === Node.TEXT_NODE) {
+      (endNode as Text).splitText(endOffset);
+      annotationSpan.appendChild(endNode);
+    }
     startNode.parentNode?.replaceChild(annotationSpan, startText);
   }
 
