@@ -134,9 +134,27 @@ export function summarize(onReceive: (text: string, isFirst: boolean) => void) {
   };
 }
 
+export function definite(onReceive: (text: string, isFirst: boolean) => void) {
+  let isFirst = true;
+  return async function (text: string) {
+    queryFn({
+      userPrompt: text,
+      systemPrompt: `You are a wikipedia, you should only give the definition of the text, do not interpret it.`,
+      assistantPrompt: `Give the definition of this text in the most concise language in Chinese.`,
+      onMessage(newMsg) {
+        onReceive(newMsg, isFirst);
+        if (isFirst) {
+          isFirst = false;
+        }
+      },
+    });
+  };
+}
+
 const api = {
   translate,
   summarize,
+  definite,
 };
 
 export default api;

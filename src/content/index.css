@@ -37,7 +37,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 360px;
+  width: 420px;
   background-color: white;
   border: 1px solid #222;
   box-shadow: 4px 4px 0px 0 rgba(0, 0, 0, 0.12);
@@ -175,6 +175,7 @@
   font-weight: 600 !important;
   width: 100%;
   max-width: 100%;
+  line-height: 22px !important;
 }
 
 .annotation-highlighted-text:not(.invalid) {

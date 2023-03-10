@@ -14,7 +14,7 @@ type ElementProps = {
   className?: string;
   innerHTML?: string;
   style?: Record<string, string | number>;
-  callback?: (elm: HTMLElement) => void;
+  mount?: (elm: HTMLElement) => void;
 };
 
 export const $prefix = "nono-gpt-extension__";
@@ -24,7 +24,7 @@ export function createElement(tagName: string) {
     props: ElementProps,
     listeners?: T
   ) {
-    const { id, className, innerHTML, callback, style } = props;
+    const { id, className, innerHTML, mount, style } = props;
     const element = document.createElement(tagName);
 
     element.innerHTML = innerHTML || "";
@@ -41,7 +41,7 @@ export function createElement(tagName: string) {
       element.classList.add($prefix + className);
     }
 
-    callback?.(element);
+    mount?.(element);
 
     let events = {} as {
       [K in keyof T]: EventReturnType<T[K]>;
@@ -243,8 +243,8 @@ export function atom<T extends any>(state: T) {
 
   const getState = () => state$.getValue();
 
-  const subscribe = (callback: (state: T) => void) => {
-    state$.subscribe(callback);
+  const subscribe = (mount: (state: T) => void) => {
+    state$.subscribe(mount);
   };
 
   return {

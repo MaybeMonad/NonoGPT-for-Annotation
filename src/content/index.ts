@@ -1,4 +1,4 @@
-import { fromEvent, interval, merge, noop } from "rxjs";
+import { Observable, fromEvent, interval, merge, noop } from "rxjs";
 import {
   map,
   mergeWith,
@@ -12,7 +12,7 @@ import { match, Pattern } from "ts-pattern";
 import { annotate } from "rough-notation";
 
 import { hideElement, highlightSelection, showElement } from "~/util";
-import { showAnnotationPanel, useLoading } from "~/content/functions";
+import { useAnnotationPanel, useLoading } from "~/content/functions";
 import * as store from "~/content/store";
 import { MessageType } from "~/content/constants";
 import * as elements from "~/content/elements";
@@ -23,8 +23,8 @@ import "./index.css";
 
 console.log("Content Script is Working!");
 
-elements.translateButton.listeners.click$
-  .pipe(
+function actionButton(event: Observable<Event>, action: keyof typeof api) {
+  return event.pipe(
     map(() => {
       elements.resultElement.element.style.display = "block";
       const { loading$ } = useLoading((frame) => {
@@ -34,7 +34,7 @@ elements.translateButton.listeners.click$
       return loading$;
     }),
     switchMap((loading$) =>
-      api.translate((result, isFirst) => {
+      api[action]((result, isFirst) => {
         if (isFirst) {
           loading$.unsubscribe();
           elements.resultElement.element.innerHTML = "";
@@ -42,31 +42,25 @@ elements.translateButton.listeners.click$
         elements.resultElement.element.innerHTML += result;
       })(store.selectedTextStore.getState())
     )
-  )
-  .subscribe();
+  );
+}
 
-elements.summarizeButton.listeners.click$
-  .pipe(
-    map(() => {
-      elements.resultElement.element.style.display = "block";
-      const { loading$ } = useLoading((frame) => {
-        elements.resultElement.element.innerHTML = `${frame} loading...`;
-      });
+const translateButton = actionButton(
+  elements.translateButton.listeners.click$,
+  "translate"
+);
 
-      return loading$;
-    }),
-    switchMap((loading$) =>
-      api.summarize((result, isFirst) => {
-        if (isFirst) {
-          loading$.unsubscribe();
-          elements.resultElement.element.innerHTML = "";
-        }
-        elements.resultElement.element.style.display = "block";
-        elements.resultElement.element.innerHTML += result;
-      })(store.selectedTextStore.getState())
-    )
-  )
-  .subscribe();
+const summarizeButton = actionButton(
+  elements.summarizeButton.listeners.click$,
+  "summarize"
+);
+
+const definitionButton = actionButton(
+  elements.definitionButton.listeners.click$,
+  "definite"
+);
+
+merge(translateButton, summarizeButton, definitionButton).subscribe();
 
 elements.originTextDeleteButton.listeners.click$.subscribe(() => {
   const annotations = store.annotations.getState();
@@ -183,7 +177,7 @@ mouseup$
         });
         annotation.show();
 
-        const showPanel = showAnnotationPanel({
+        const showPanel = useAnnotationPanel({
           originTextElement: elements.originTextElement.element,
           panelElement: elements.annotationPanel.element,
           text,

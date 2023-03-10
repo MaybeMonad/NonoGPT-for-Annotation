@@ -6,7 +6,7 @@ import { interval, map } from "rxjs";
 import * as globalStore from "~/content/store";
 import { showElement } from "~/util";
 
-export function showAnnotationPanel(options: {
+export function useAnnotationPanel(options: {
   originTextElement: HTMLElement;
   panelElement: HTMLElement;
   text: string;
