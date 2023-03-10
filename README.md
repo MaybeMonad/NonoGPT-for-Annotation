@@ -8,11 +8,13 @@ NonoGPT for Annotation 是一个整合了 ChatGPT 能力的网页标注工具，
 
 🚧 Under construction
 
+Latest update: [Twitter](https://twitter.com/CaptainMartinIO/status/1632430220656648192)
+
 - [x] Annotation - 网页内容高亮标注
 - [x] Translation - 网页内容翻译
 - [x] Summarization - 网页内容总结
 - [x] Speedy Translation for Paragraph - 网页段落快速翻译
-- [ ] Definition - 生词定义
+- [x] Definition - 生词定义
 - [ ] Vocabulary Notebook
 - [ ] Export to X
 
