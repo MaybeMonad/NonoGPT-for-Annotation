@@ -176,3 +176,7 @@
   width: 100%;
   max-width: 100%;
 }
+
+.annotation-highlighted-text:not(.invalid) {
+  color: #222;
+}

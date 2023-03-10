@@ -1,4 +1,13 @@
 import anime from "animejs";
+import { BehaviorSubject, Observable, fromEvent } from "rxjs";
+
+type EventReturnType<ListenerFn> = ListenerFn extends (
+  event: Observable<Event>
+) => infer T
+  ? T
+  : never;
+
+type Listeners = Record<string, (event: Observable<Event>) => Observable<any>>;
 
 type ElementProps = {
   id?: string;
@@ -11,7 +20,10 @@ type ElementProps = {
 export const $prefix = "nono-gpt-extension__";
 
 export function createElement(tagName: string) {
-  return function (props: ElementProps) {
+  return function <T extends Record<string, any>>(
+    props: ElementProps,
+    listeners?: T
+  ) {
     const { id, className, innerHTML, callback, style } = props;
     const element = document.createElement(tagName);
 
@@ -31,24 +43,46 @@ export function createElement(tagName: string) {
 
     callback?.(element);
 
-    return element;
+    let events = {} as {
+      [K in keyof T]: EventReturnType<T[K]>;
+    };
+
+    if (listeners) {
+      events = Object.keys(listeners).reduce(
+        (acc, cur) => {
+          acc[cur as keyof T] = listeners[cur](
+            fromEvent(element, cur.slice(0, -1))
+          ) as EventReturnType<T[keyof T]>;
+
+          return acc;
+        },
+        {} as {
+          [K in keyof T]: EventReturnType<T[K]>;
+        }
+      );
+    }
+
+    return { element, listeners: events };
   };
 }
 
-export function Div(props: ElementProps) {
-  return createElement("div")(props);
+export function Div<T extends Listeners>(props: ElementProps, listeners?: T) {
+  return createElement("div")<T>(props, listeners);
 }
 
-export function Button(props: ElementProps) {
-  return createElement("button")(props);
+export function Button<T extends Listeners>(
+  props: ElementProps,
+  listeners?: T
+) {
+  return createElement("button")<T>(props, listeners);
 }
 
-export function Span(props: ElementProps) {
-  return createElement("span")(props);
+export function Span<T extends Listeners>(props: ElementProps, listeners?: T) {
+  return createElement("span")<T>(props, listeners);
 }
 
-export function P(props: ElementProps) {
-  return createElement("p")(props);
+export function P<T extends Listeners>(props: ElementProps, listeners?: T) {
+  return createElement("p")<T>(props, listeners);
 }
 
 export function appendTo(target: HTMLElement) {
@@ -150,7 +184,7 @@ export function highlightSelection() {
 
   // Create a new span element for the highlight
   const id = text;
-  const annotationSpan = Span({
+  const { element: annotationSpan } = Span({
     id,
     className: `annotation-highlighted-text`,
   });
@@ -198,4 +232,24 @@ export function highlightSelection() {
   };
 
   return highlighted;
+}
+
+export function atom<T extends any>(state: T) {
+  const state$ = new BehaviorSubject(state);
+
+  const setState = (state: T) => {
+    state$.next(state);
+  };
+
+  const getState = () => state$.getValue();
+
+  const subscribe = (callback: (state: T) => void) => {
+    state$.subscribe(callback);
+  };
+
+  return {
+    setState,
+    getState,
+    subscribe,
+  };
 }

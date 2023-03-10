@@ -8,7 +8,7 @@
   "content_scripts": [
     {
       "js": [
-        "src/content/index.tsx"
+        "src/content/index.ts"
       ],
       "matches": [
         "http://*/*",
