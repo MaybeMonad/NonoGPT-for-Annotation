@@ -19,7 +19,7 @@ Latest update: [Twitter](https://twitter.com/CaptainMartinIO/status/163243022065
 - [x] Speedy Translation for Paragraph - 网页段落快速翻译
 - [x] Definition                       - 生词定义
 - [x] Annotation Board                 - 标注汇总
-- [ ] Assist to Inputs                 - 网页输入框辅助输入
+- [x] Assist to Inputs                 - 网页输入框辅助输入
 - [ ] Chat on Definition               - 生词聊天
 - [ ] Add Thoughts to Highlighted Text - 添加笔记
 - [ ] Vocabulary Notebook              - 生词本
@@ -28,5 +28,7 @@ Latest update: [Twitter](https://twitter.com/CaptainMartinIO/status/163243022065
 ## Preview
 
 https://user-images.githubusercontent.com/24782674/223739890-6ac1dd36-5e8f-4fb9-a055-f763906d6c7a.mp4
+
+https://user-images.githubusercontent.com/24782674/225643057-9b78162d-57a6-4741-bea2-03a3ad3870f9.mp4
 
 ![Preview](preview.png)
