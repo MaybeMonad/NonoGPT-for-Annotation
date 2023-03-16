@@ -97,12 +97,12 @@ export async function queryFn(query: Query) {
         } else {
           // do nothing to automatically retry. You can also
           // return a specific retry interval here.
-          query.onError(err);
+          // query.onError(err);
         }
       },
     });
   } catch (err) {
-    query.onError("Unknown Error");
+    // query.onError("Unknown Error");
   }
 }
 
