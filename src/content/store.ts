@@ -25,3 +25,4 @@ export const annotations = atom(
 export const selectedTextStore = atom("");
 export const currentAnnotationId = atom("");
 export const currentParagraphElement = atom<HTMLParagraphElement | null>(null);
+export const currentInputElement = atom<HTMLInputElement | null>(null);

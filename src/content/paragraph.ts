@@ -100,6 +100,10 @@ export default function speedyTranslationForParagraph(
         },
         (receivedText) => {
           console.log(receivedText);
+        },
+        (err) => {
+          loading$.unsubscribe();
+          translatedTextElement.innerText = "Unexpected error occurred.";
         }
       )((clonedParagraphElement as HTMLParagraphElement).innerText);
     }

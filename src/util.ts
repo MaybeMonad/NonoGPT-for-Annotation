@@ -121,18 +121,20 @@ export function hideElement(...targets: HTMLElement[]) {
 export function showElement(options: {
   top?: number;
   left?: number;
+  right?: number;
   motion?: anime.AnimeParams;
   style?: Record<string, string | number>;
   innerHTML?: string;
 }) {
   return function (target: HTMLElement) {
-    const { top, left, motion = {}, style, innerHTML } = options;
+    const { top, left, right, motion = {}, style, innerHTML } = options;
     const shouldAnimate = target.style.display === "none";
 
     setStyle(target, {
       display: "block",
       top: top && `${top}px`,
       left: left && `${left}px`,
+      right: right && `${right}px`,
       ...style,
     });
 

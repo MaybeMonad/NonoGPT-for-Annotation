@@ -19,6 +19,7 @@ Latest update: [Twitter](https://twitter.com/CaptainMartinIO/status/163243022065
 - [x] Speedy Translation for Paragraph - 网页段落快速翻译
 - [x] Definition                       - 生词定义
 - [x] Annotation Board                 - 标注汇总
+- [ ] Assist to Inputs                 - 网页输入框辅助输入
 - [ ] Chat on Definition               - 生词聊天
 - [ ] Add Thoughts to Highlighted Text - 添加笔记
 - [ ] Vocabulary Notebook              - 生词本

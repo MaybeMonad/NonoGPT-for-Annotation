@@ -132,7 +132,8 @@
   align-items: center;
 }
 
-.highlight-paragraph-button {
+.highlight-paragraph-button,
+.translate-input-button {
   position: absolute;
   top: 0;
   left: 0;
@@ -150,7 +151,8 @@
   cursor: pointer;
 }
 
-.highlight-paragraph-button > svg {
+.highlight-paragraph-button > svg,
+.translate-input-button > svg {
   width: 16px !important;
   height: 16px !important;
 }

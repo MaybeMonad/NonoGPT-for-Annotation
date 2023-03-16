@@ -17,6 +17,7 @@ import * as store from "~/content/store";
 import { MessageType } from "~/content/constants";
 import * as elements from "~/content/elements";
 import speedyTranslationForParagraph from "~/content/paragraph";
+import assist2Inputs from "~/content/input";
 import api from "~/content/api";
 
 import "./index.css";
@@ -54,6 +55,11 @@ function actionButton(event: Observable<Event>, action: keyof typeof api) {
             });
             store.annotations.setState(newState);
           }
+        },
+        (err) => {
+          loading$.unsubscribe();
+          elements.resultElement.element.innerHTML =
+            'Unexpected Error: "' + err + '"';
         }
       )(store.selectedTextStore.getState())
     )
@@ -270,3 +276,4 @@ mouseup$
   });
 
 speedyTranslationForParagraph(elements.highlightParagraphButton, store);
+assist2Inputs(elements.translateInputButton, store);

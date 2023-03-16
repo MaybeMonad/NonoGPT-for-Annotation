@@ -3,6 +3,7 @@
  */
 
 import { interval, map } from "rxjs";
+
 import * as globalStore from "~/content/store";
 import { showElement } from "~/util";
 

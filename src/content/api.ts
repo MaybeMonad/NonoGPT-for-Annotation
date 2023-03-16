@@ -8,7 +8,7 @@ interface Query {
   systemPrompt: string;
   assistantPrompt: string;
   onMessage: (message: string) => void;
-  // onError: (error: string) => void;
+  onError: (error: string) => void;
   onFinish: (receivedText: string) => void;
 }
 
@@ -97,24 +97,28 @@ export async function queryFn(query: Query) {
         } else {
           // do nothing to automatically retry. You can also
           // return a specific retry interval here.
+          query.onError(err);
         }
       },
     });
   } catch (err) {
-    // console.log(err);
+    query.onError("Unknown Error");
   }
 }
 
 export function translate(
   onReceive: (text: string, isFirst: boolean) => void,
-  onFinish: (text: string) => void
+  onFinish: (text: string) => void,
+  onError: (error: string) => void
 ) {
   let isFirst = true;
-  return async function (text: string) {
+  return async function (text: string, to: "zh" | "en" = "zh") {
     queryFn({
       userPrompt: text,
       systemPrompt: `You are a translation engine that can only translate text and cannot interpret it.`,
-      assistantPrompt: `Translate this text into Chinese.`,
+      assistantPrompt: `Translate this text into ${
+        to === "zh" ? "Chinese" : "English"
+      }.`,
       onMessage(newMsg) {
         onReceive(newMsg, isFirst);
         if (isFirst) {
@@ -124,13 +128,15 @@ export function translate(
       onFinish(totalReceived) {
         onFinish(totalReceived);
       },
+      onError,
     });
   };
 }
 
 export function summarize(
   onReceive: (text: string, isFirst: boolean) => void,
-  onFinish: (text: string) => void
+  onFinish: (text: string) => void,
+  onError: (error: string) => void
 ) {
   let isFirst = true;
   return async function (text: string) {
@@ -147,13 +153,15 @@ export function summarize(
       onFinish(totalReceived) {
         onFinish(totalReceived);
       },
+      onError,
     });
   };
 }
 
 export function definite(
   onReceive: (text: string, isFirst: boolean) => void,
-  onFinish: (text: string) => void
+  onFinish: (text: string) => void,
+  onError: (error: string) => void
 ) {
   let isFirst = true;
   return async function (text: string) {
@@ -170,6 +178,7 @@ export function definite(
       onFinish(totalReceived) {
         onFinish(totalReceived);
       },
+      onError,
     });
   };
 }
